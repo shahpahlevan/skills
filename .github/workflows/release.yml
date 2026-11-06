@@ -1,0 +1,72 @@
+name: release
+
+# Runs only after the scrub check and the tests pass (the checks job).
+# A push to main whose .claude-plugin/plugin.json version has no tag yet cuts
+# v<version> as a GitHub release, then calls the website's deploy hook (the
+# CLOUDFLARE_DEPLOY_HOOK secret) so the site rebuilds its skill list.
+# A push to main that leaves the version alone does nothing.
+# A push to any other branch is a dry run: it prints what main would do.
+# To retry a failed rebuild, run this workflow by hand on main: it calls the
+# deploy hook for the current release without cutting a new one.
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  checks:
+    uses: ./.github/workflows/checks.yml
+    secrets: inherit
+
+  release:
+    needs: checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Plan
+        id: plan
+        run: node scripts/release-plan.mjs
+
+      - name: Dry run
+        if: github.ref != 'refs/heads/main'
+        env:
+          RELEASE: ${{ steps.plan.outputs.release }}
+          TAG: ${{ steps.plan.outputs.tag }}
+          HOOK_SET: ${{ secrets.CLOUDFLARE_DEPLOY_HOOK != '' }}
+        run: |
+          echo "Dry run on ${GITHUB_REF_NAME}: nothing is tagged, released or rebuilt."
+          if [ "$RELEASE" = "true" ]; then
+            echo "On main this would release ${TAG} and call the deploy hook."
+            echo "Deploy hook secret set: ${HOOK_SET}"
+          else
+            echo "On main this would do nothing: ${TAG} is already released."
+          fi
+
+      - name: Release
+        if: github.ref == 'refs/heads/main' && steps.plan.outputs.release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.plan.outputs.tag }}
+        run: gh release create "$TAG" --target "$GITHUB_SHA" --title "$TAG" --generate-notes
+
+      - name: Rebuild the site
+        if: github.ref == 'refs/heads/main' && (steps.plan.outputs.release == 'true' || github.event_name == 'workflow_dispatch')
+        env:
+          DEPLOY_HOOK: ${{ secrets.CLOUDFLARE_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$DEPLOY_HOOK" ]; then
+            echo "::error::CLOUDFLARE_DEPLOY_HOOK is not set"
+            exit 1
+          fi
+          curl -fsS -X POST --data '' -o /dev/null "$DEPLOY_HOOK"
+          echo "Deploy hook called."

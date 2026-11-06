@@ -1,0 +1,13 @@
+{
+  "name": "skills",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "scrub": "node checks/scrub.mjs",
+    "test": "node --test \"tests/*.test.mjs\""
+  }
+}

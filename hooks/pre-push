@@ -1,0 +1,49 @@
+#!/bin/sh
+# Pre-push hook: refuses a push whose commits name a client.
+#
+# The client-name list lives outside this repo, at the path in git config
+# `skills.clientList` (one name per line, `#` starts a comment). Names match
+# case-insensitively as whole words, in every file of every commit being pushed
+# and in each commit message. If the list is unset, missing or empty, the hook
+# refuses the push rather than letting it through unchecked.
+#
+# Install it with hooks/install.sh.
+
+fail() {
+  echo "pre-push: $*" >&2
+  exit 1
+}
+
+list=$(git config --get skills.clientList) ||
+  fail "skills.clientList is not set; run hooks/install.sh <path to the client-name list>"
+[ -f "$list" ] || fail "the client-name list is missing at the path in skills.clientList"
+
+patterns=$(mktemp) || fail "could not make a temp file"
+trap 'rm -f "$patterns"' EXIT
+# Blank lines would match everything, so drop them with the comments.
+sed -e 's/#.*//' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' "$list" | grep -v '^$' >"$patterns"
+[ -s "$patterns" ] || fail "the client-name list is empty"
+
+remote=$1
+found=0
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  case $local_sha in *[!0]*) ;; *) continue ;; esac # a branch deletion
+  case $remote_sha in
+    *[!0]*) range="$remote_sha..$local_sha" ;;
+    *) range="$local_sha --not --remotes=$remote" ;;
+  esac
+  # shellcheck disable=SC2086 # $range is two words on a new branch
+  for commit in $(git rev-list $range); do
+    if git grep -I -i -w -F -f "$patterns" "$commit" -- >&2; then
+      found=1
+    fi
+    if git log -1 --format=%B "$commit" | grep -i -w -F -f "$patterns" >/dev/null; then
+      echo "commit message of $commit" >&2
+      found=1
+    fi
+  done
+done
+
+[ "$found" -eq 0 ] || fail "a client name is in the commits above; remove it before you push"
+exit 0

@@ -1,0 +1,30 @@
+name: checks
+
+on:
+  push:
+  pull_request:
+  workflow_call:
+
+jobs:
+  scrub:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # The private-term list lives outside the repo; CI gets it from a secret.
+      - name: Private-term list
+        env:
+          TERMS: ${{ secrets.SCRUB_PRIVATE_TERMS }}
+        run: |
+          if [ -z "$TERMS" ]; then
+            echo "::error::SCRUB_PRIVATE_TERMS is not set"
+            exit 1
+          fi
+          printf '%s\n' "$TERMS" > "$RUNNER_TEMP/private-terms.txt"
+          echo "SCRUB_PRIVATE_LIST=$RUNNER_TEMP/private-terms.txt" >> "$GITHUB_ENV"
+      - name: Scrub check
+        run: node checks/scrub.mjs
+      - name: Tests
+        run: npm test

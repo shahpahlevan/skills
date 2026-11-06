@@ -1,0 +1,16 @@
+{
+  "name": "shahpahlevan-skills",
+  "owner": {
+    "name": "Shahriar Pahlevan"
+  },
+  "metadata": {
+    "description": "WordPress skills for AI agents, by Shahriar Pahlevan."
+  },
+  "plugins": [
+    {
+      "name": "wordpress-agent-skills",
+      "source": "./",
+      "description": "Skills for building and looking after WordPress sites with an AI agent: register a site, run WP-CLI safely, migrate a site, and check it before launch."
+    }
+  ]
+}
