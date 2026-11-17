@@ -74,3 +74,74 @@ The agent still reads the state again before it says done. Over a non-interactiv
 
 **Why doesn't the agent delete old restore points itself?**
 A deletion it schedules for itself is hard to audit. A restore point that deletes itself while you still need it is worse than one that lingers. So the date is written down, and the deleting is yours.
+
+## Moving a whole site
+
+These sections moved here from the article "How to know your site still works after a move" (formerly "The new way to move a live WordPress site"), when it was rewritten for the site's owner. They cover a whole move with `/migrate`; the guards they name are the ones above.
+
+### What it does
+
+Each guard ends on a pass or a stop, and a stop ends the run. The last step is yours.
+
+| Step | What happens |
+| --- | --- |
+| **Check both ends** | Asks each site for its own address, then checks the target's disk space and that it holds no real content yet |
+| **Take a restore point** | Dumps the target's database and copies its files, and keeps the dump only if it passes the dump check: not empty, starts like SQL, ends with mysqldump's last line |
+| **Copy and load** | Asks the target its address and runs the dump check again, then copies the files and loads the database |
+| **Change the address** | Dry-runs four forms of the old address: the URL, the same with escaped slashes as page builders store it, plain `http`, and the bare domain. Reads each count, then runs them for real |
+| **Verify** | Re-runs the dry runs, expecting 0, and fetches inner pages. Then you look at the site |
+
+### When to reach for it on a move
+
+Reach for `/migrate` when a WordPress site moves to another server or account, such as staging to production. The target's files and database are overwritten, so it stops if the target already holds real content. A fresh WordPress install doesn't stop it, since that's where my moves start.
+
+### The check that passes while the site is broken
+
+The first time I moved a real site this way, the final check passed while every inner page returned a 404. A target that's already public stays behind the host's password wall while it moves. The wall answers before WordPress does, so on that first run every inner page gave the same 401, real or missing. The final check counted each 401 as a pass, and never reached the 404 behind it. Now a 401 makes it report the page as unverified, never as passed.
+
+A check like that is fail-green: it reports success when what it checks has failed, because it could never report anything else. A green result proves nothing until it could have been red, and a fail-green check is worse than no check, because it turns a fault you'd find into an all-clear you trust. The same session found two more like it.
+
+So every guard now reads the fact itself:
+
+| Instead of trusting | The guard reads |
+| --- | --- |
+| **Guard 1:** that the connection worked | Each site's own address, from WordPress |
+| **Guard 2:** that the export finished without error | The dump itself, by the dump check |
+| **Guard 3:** that the restore point passed earlier | The dump check again, just before the database is emptied |
+| **Guard 4:** that the search-replace ran | Its count of changes, then 0 when it runs again |
+| **Final check:** a 401 from the password wall | A 200, or the page reported as unverified |
+
+A check that can fail will sometimes fail wrongly, as it did on one page in the second run. That's a cheaper mistake than a pass that means nothing.
+
+### What a move leaves behind
+
+| It leaves | Why |
+| --- | --- |
+| A restore point of the target, outside the web root | It's checked twice before the first write |
+| The exact restore command | It refuses to run against an empty or non-SQL restore point |
+| A `RETENTION.md` beside every dump | Dumps hold password hashes and keys, so it names the date to delete them |
+| The four replacement counts | A count far from what the site suggests is a stop, not a detail |
+| Which checks passed, and which were unverified | So an unverified check is never read as a pass |
+
+### A move is working if
+
+- Both ends print the address you expected.
+- The restore point's dump passes the dump check, and its path is in the report.
+- The four dry runs report 0 when they run again.
+- `.htaccess` holds a `# BEGIN WordPress` block.
+- Inner pages return 200, or the report calls them unverified.
+- You've looked at the site in a browser.
+
+### Questions about a move
+
+**Why not `sed` on the dump?**
+WordPress stores settings and page builder layouts as serialised data: text that states its own length. `sed` changes the text but not the length, so the value breaks without a word, even where a host's own guide recommends it. `wp search-replace` with `--precise` and `--recurse-objects` fixes the lengths as it goes.
+
+**Why read `.htaccess` instead of trusting the flush?**
+Under WP-CLI, `wp rewrite flush` can finish without writing the WordPress block. Its exit code says nothing, so the skill reads the file.
+
+**Did it work the first time?**
+No. The first run took two attempts and one fix by hand: a `#` in the database password got cut off, and rsync overwrote CSS that had already been fixed. Reviews of the tool had found 28 issues before that run, and missed both.
+
+**What can't it check?**
+Whether the site looks right. None of its checks prove that, so the last step is yours.
