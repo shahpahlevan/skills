@@ -4,7 +4,7 @@ Move a WordPress site to another host or account with plain `wp`, `rsync` and `s
 
 ## Any write to a live site
 
-These sections moved here from the article that pairs with this skill on my site, "How to know a change to your site really happened" (formerly "How I let a coding agent run WP-CLI on a live site"), when it was rewritten for the site's owner. They cover any write a coding agent makes to a live site over SSH; `/migrate` holds a whole move to the same rule.
+These sections moved here from the article that pairs with this skill on my site, "How to know a website change really happened" (formerly "How I let a coding agent run WP-CLI on a live site"), when it was rewritten for the site's owner. They cover any write a coding agent makes to a live site over SSH; `/migrate` holds a whole move to the same rule.
 
 A database export can exit 0 and leave a 20-byte file. No error, no warning, and no backup inside it. So when a coding agent runs WP-CLI on a live site for me, each write ends on a separate read, never on what the command said. On one bulk change, that meant reading 43 live values before writing any.
 
