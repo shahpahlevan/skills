@@ -11,6 +11,7 @@ written for any hosting account and any site.
 | `wp-cli-safely` | Write-safety rules for running WP-CLI against a live WordPress site. Use before any write to a production or client site over SSH, any bulk write through `wp eval` or `$wpdb`, a database export, or a command you hand to the human to run. |
 | `migrate` | Move a WordPress site to another host or account with plain wp, rsync and ssh, behind four guards. Use when moving or copying a WordPress site to another server or account. |
 | `launch-check` | Go/no-go check that a WordPress site is ready to launch. Runs a read-only setup script, then walks the launch checklist with the site owner, from staging URLs and redirects to forms and a restore drill. Use when a WordPress site is about to go live, move host or cut over DNS. |
+| `launch-security-check` | Go/no-go security check for a WordPress site, run from the outside. Runs a read-only script, then works 19 checks, each with a fix, from two-factor sign-in and security headers to locked staging copies and DNS. Use before a WordPress site launches, right after DNS cutover, or after a host or CDN move. |
 
 ## Install
 
@@ -20,7 +21,7 @@ Install one skill with:
 npx skills add shahpahlevan/skills --skill <name>
 ```
 
-In Claude Code, add all four as one plugin:
+In Claude Code, add all five as one plugin:
 
 ```text
 /plugin marketplace add shahpahlevan/skills
