@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
 
-const script = join(import.meta.dirname, "..", "skills", "pre-launch-check", "scripts", "go-live-check.sh");
+const script = join(import.meta.dirname, "..", "skills", "launch-check", "scripts", "go-live-check.sh");
 const run = promisify(execFile);
 
 // A stand-in site on localhost that answers 404 to everything and records each request.
@@ -81,18 +81,6 @@ test("a search-replace dry run that errors fails the check, never passes it", as
   assert.match(line(stdout, "No staging URLs"), /FAIL/);
 });
 
-test("the wp-cron.php check never runs the site's cron", async (t) => {
-  const site = await fakeSite(t);
-  await goLiveCheck(site);
-  const cron = site.requests.filter((r) => r.path.startsWith("/wp-cron.php"));
-  assert.ok(cron.length > 0, "wp-cron.php is checked");
-  // WordPress runs cron on any request to wp-cron.php except a POST with a body.
-  for (const r of cron) {
-    assert.equal(r.method, "POST", `${r.method} ${r.path}`);
-    assert.notEqual(r.body, "");
-  }
-});
-
 test("go-live-check.sh runs against example.com and prints its results", async () => {
   const site = { url: "https://example.com" };
   const { status, stdout, stderr } = await goLiveCheck(site);
@@ -101,5 +89,6 @@ test("go-live-check.sh runs against example.com and prints its results", async (
   assert.ok([0, 2].includes(status), `exit ${status}\n${stderr}`);
   assert.equal(stderr, "");
   assert.match(stdout, /SETUP\s+PASS \d+\s+FAIL \d+\s+SKIP \d+/);
-  assert.match(stdout, /SECURITY\s+PASS \d+\s+FAIL \d+\s+SKIP \d+/);
+  // The security checks live in their own skill.
+  assert.doesNotMatch(stdout, /SECURITY/);
 });

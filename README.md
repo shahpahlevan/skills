@@ -10,7 +10,7 @@ written for any hosting account and any site.
 | `register-site` | Make a hosting account ready for agent work over SSH and record it in a sites.json registry. Use when an agent needs SSH access to a new WordPress site, or when adding a site or environment to sites.json. |
 | `wp-cli-safely` | Write-safety rules for running WP-CLI against a live WordPress site. Use before any write to a production or client site over SSH, any bulk write through `wp eval` or `$wpdb`, a database export, or a command you hand to the human to run. |
 | `migrate` | Move a WordPress site to another host or account with plain wp, rsync and ssh, behind four guards. Use when moving or copying a WordPress site to another server or account. |
-| `pre-launch-check` | Go/no-go check of a WordPress site before it launches. Runs a read-only probe script, then walks the rest of the pre-launch checklist with the site owner. Use when a WordPress site is about to go live, move host or cut over DNS. |
+| `launch-check` | Go/no-go check that a WordPress site is ready to launch. Runs a read-only setup script, then walks the launch checklist with the site owner, from staging URLs and redirects to forms and a restore drill. Use when a WordPress site is about to go live, move host or cut over DNS. |
 
 ## Install
 

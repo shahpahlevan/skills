@@ -10,6 +10,6 @@
     "./skills/register-site",
     "./skills/wp-cli-safely",
     "./skills/migrate",
-    "./skills/pre-launch-check"
+    "./skills/launch-check"
   ]
 }
