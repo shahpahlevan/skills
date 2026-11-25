@@ -12,7 +12,7 @@ It runs in four steps, and the script in them only reads: it sends requests and 
 
 | Step | Who | What happens |
 | --- | --- | --- |
-| **Give the inputs** | You | The site's address, every hostname that should redirect to it, and your permission to probe them |
+| **Give the inputs** | You | The site's address, every hostname that should redirect to it, and your permission to probe them. What `launch-security-check` already gathered isn't asked again |
 | **Run the script** | Script | `go-live-check.sh` runs its setup pass on the live site |
 | **Walk the checklist** | Agent and you | All 17 items in order: a script line cited where one settles it, a read-only request where one can, and your answer for the rest |
 | **Give the verdict** | Agent | GO or NO-GO on the first line, then the blockers, then the follow-ups |
@@ -36,6 +36,8 @@ The 17 items fall into four areas:
 The script settles items in the first two areas, some only in part. The last two take your answer.
 
 ## When to reach for it
+
+It's the second of a pair. Run `launch-security-check` first: it checks the site's security from outside and needs no owner. A site is ready when both say GO.
 
 Reach for it before a site goes live, moves host or has its DNS switched over, and again after each fix and after the switch, when redirects often change. It fixes nothing, so each fix is separate work. Don't run it on a site you don't control or have no written permission to probe.
 

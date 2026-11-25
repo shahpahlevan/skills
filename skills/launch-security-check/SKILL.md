@@ -1,6 +1,6 @@
 ---
 name: launch-security-check
-description: Go/no-go security check for a WordPress site, run from the outside. Runs a read-only script, then works 19 checks, each with a fix, from two-factor sign-in and security headers to locked staging copies and DNS. Use before a WordPress site launches, right after DNS cutover, or after a host or CDN move.
+description: Go/no-go security check for a WordPress site, run from the outside. Runs a read-only script, then works 19 checks, each with a fix, from two-factor sign-in and security headers to locked staging copies and DNS. Use before a WordPress site launches, right after DNS cutover, or after a host or CDN move. Run launch-check after it, and the site is ready when both say GO.
 version: 1.0.0
 ---
 
@@ -9,6 +9,8 @@ version: 1.0.0
 A security **gate** between a built WordPress site and its launch: 19 checks made from outside the site, the way an attacker first sees it. Each check ends PASS, FAIL or N/A on observed evidence, every FAIL is a **blocker** or a **follow-up**, and the run ends in one verdict, GO or NO-GO.
 
 The gate is read-only: headers, status codes, DNS records and admin-screen settings. You observe and record; fixes are separate work, and each fixed check is made again here before it counts.
+
+This gate is the first of a pair. It needs no site owner, so it runs before `launch-check`, which covers readiness and backups with the owner and repeats none of these checks. The site is ready to launch when both say GO.
 
 ## 1. Gather the scope
 
@@ -57,7 +59,7 @@ Done when every FAIL carries a fix and an owner.
 Any **blocker** at FAIL makes the verdict NO-GO. A **follow-up** at FAIL lets the launch go ahead, and goes on the owner's list with a date. Report in this shape:
 
 ```text
-Verdict: GO | NO-GO        blockers _/8 at FAIL        follow-ups _/11 at FAIL
+GO | NO-GO        blockers _/8 at FAIL        follow-ups _/11 at FAIL
 Site: <url>        Run: <pre-launch | post-cutover>        Date: <YYYY-MM-DD>
 
 ID     Severity   Result  Evidence                       Fix / owner / due
@@ -68,15 +70,18 @@ WP-19  blocker    ...
 
 Evidence is the observed fact: the header line, the status code, the setting seen.
 
-Done when the first line is GO or NO-GO and all 19 checks have a row.
+Keep the host list from step 1 with the report: `launch-check` starts from it.
+
+Done when the first line is GO or NO-GO, all 19 checks have a row and the host list is with the report.
 
 ## 6. Check again when things change
 
 - After a fix, make the check again and update its row. Keep the old FAIL in the record as history.
 - After DNS cutover, run the whole gate against the real domain. A CDN and production headers change the results.
 - After a host or CDN move, run the whole gate again.
+- After this gate's verdict, run `launch-check` next, before launch and again after DNS cutover or a host move. Hand it the host list. The site is ready only while both gates say GO.
 
-Done when every check touched by the change carries a fresh result and the verdict is given again.
+Done when every check touched by the change carries a fresh result, the verdict is given again, and the user has been told to run `launch-check`.
 
 ## The checks
 

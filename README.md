@@ -10,8 +10,12 @@ written for any hosting account and any site.
 | `register-site` | Make a hosting account ready for agent work over SSH and record it in a sites.json registry. Use when an agent needs SSH access to a new WordPress site, or when adding a site or environment to sites.json. |
 | `wp-cli-safely` | Write-safety rules for running WP-CLI against a live WordPress site. Use before any write to a production or client site over SSH, any bulk write through `wp eval` or `$wpdb`, a database export, or a command you hand to the human to run. |
 | `migrate` | Move a WordPress site to another host or account with plain wp, rsync and ssh, behind four guards. Use when moving or copying a WordPress site to another server or account. |
-| `launch-check` | Go/no-go check that a WordPress site is ready to launch. Runs a read-only setup script, then walks the launch checklist with the site owner, from staging URLs and redirects to forms and a restore drill. Use when a WordPress site is about to go live, move host or cut over DNS. |
-| `launch-security-check` | Go/no-go security check for a WordPress site, run from the outside. Runs a read-only script, then works 19 checks, each with a fix, from two-factor sign-in and security headers to locked staging copies and DNS. Use before a WordPress site launches, right after DNS cutover, or after a host or CDN move. |
+| `launch-check` | Go/no-go check that a WordPress site is ready to launch. Runs a read-only setup script, then walks the launch checklist with the site owner, from staging URLs and redirects to forms and a restore drill. Use when a WordPress site is about to go live, move host or cut over DNS. Run launch-security-check first, and the site is ready when both say GO. |
+| `launch-security-check` | Go/no-go security check for a WordPress site, run from the outside. Runs a read-only script, then works 19 checks, each with a fix, from two-factor sign-in and security headers to locked staging copies and DNS. Use before a WordPress site launches, right after DNS cutover, or after a host or CDN move. Run launch-check after it, and the site is ready when both say GO. |
+
+The two launch skills run as a pair. Run `launch-security-check` first: it works
+from outside the site and needs no owner. Then run `launch-check`, which reuses its
+host list. Each gives its own GO or NO-GO, and a site is ready when both say GO.
 
 ## Install
 

@@ -10,7 +10,7 @@
     {
       "name": "wordpress-agent-skills",
       "source": "./",
-      "description": "Skills for building and looking after WordPress sites with an AI agent: register a site, run WP-CLI safely, migrate a site, and check it before launch."
+      "description": "Skills for building and looking after WordPress sites with an AI agent: register a site, run WP-CLI safely, migrate a site, and check it is secure and ready before launch."
     }
   ]
 }

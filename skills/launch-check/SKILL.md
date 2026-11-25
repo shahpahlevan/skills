@@ -1,6 +1,6 @@
 ---
 name: launch-check
-description: Go/no-go check that a WordPress site is ready to launch. Runs a read-only setup script, then walks the launch checklist with the site owner, from staging URLs and redirects to forms and a restore drill. Use when a WordPress site is about to go live, move host or cut over DNS.
+description: Go/no-go check that a WordPress site is ready to launch. Runs a read-only setup script, then walks the launch checklist with the site owner, from staging URLs and redirects to forms and a restore drill. Use when a WordPress site is about to go live, move host or cut over DNS. Run launch-security-check first, and the site is ready when both say GO.
 version: 2.0.0
 ---
 
@@ -10,9 +10,11 @@ A **gate** between a built WordPress site and its launch. The result is a go/no-
 
 The gate is read-only. You observe and record; fixes are separate work, and each fixed item is checked again here before it counts.
 
+This gate is the second of a pair. `launch-security-check` runs first, from outside the site, and this gate repeats none of its checks. The site is ready to launch when both say GO.
+
 ## 1. Gather the inputs
 
-Collect from the site owner, and ask for anything missing:
+You need five inputs:
 
 - The live site's public URL.
 - Every other hostname that should redirect to it: the `www` or bare twin, and other domains.
@@ -20,7 +22,11 @@ Collect from the site owner, and ask for anything missing:
 - The staging URL the site was built on, if it moved.
 - Confirmation that the owner controls these hosts or has written permission to probe them.
 
-Done when you hold the URL and the owner's permission, and know which of the rest exist.
+Start from the host list `launch-security-check` gathered, when this session or its report holds one. It gives the live URL, the other hostnames, the non-live copies (the staging URL is one of them) and the permission. Then ask the site owner only for what is still missing: usually WP-CLI access, and which copy the site was built on.
+
+With no host list, ask whether `launch-security-check` has run. It goes first; if the user wants this gate now, collect all five inputs from the owner.
+
+Done when you hold the URL and the owner's permission, know which of the rest exist, and have asked for nothing the host list already gave.
 
 ## 2. Run the script
 
@@ -46,12 +52,23 @@ Done when every item is PASS, FAIL or N/A, each with its evidence. An item with 
 
 ## 4. Give the verdict
 
-Apply the rule at the top of [checklist.md](checklist.md) and report:
+Apply the rule at the top of [checklist.md](checklist.md) and report in this shape:
 
-- **GO** or **NO-GO**, on the first line.
-- The **blockers**: every FAIL marked blocker, each with its evidence and what would make it pass.
-- The **follow-ups**: every other FAIL, for the owner to schedule.
-- The PASS and N/A items, as one short list.
+```text
+GO | NO-GO        blockers _ at FAIL        follow-ups _ at FAIL
+Site: <url>        Date: <YYYY-MM-DD>
+
+Blockers
+<item number>  <item>  <evidence>  <what would make it pass>
+
+Follow-ups
+<item number>  <item>  <evidence>
+
+PASS: <item numbers>
+N/A: <item numbers, each with its reason>
+```
+
+A blocker is every FAIL the checklist marks blocker. Every other FAIL is a follow-up, for the owner to schedule.
 
 Done when the first line is GO or NO-GO and every FAIL sits under blockers or follow-ups.
 
@@ -60,5 +77,6 @@ Done when the first line is GO or NO-GO and every FAIL sits under blockers or fo
 - After a fix, re-run the item's check and update its line. Keep the old FAIL in the record as history.
 - After DNS cutover, run the script again against the public hostname. Redirects often change once the real domain and any CDN are in front of the site.
 - After a host move, run the whole gate again.
+- After DNS cutover or a host move, run `launch-security-check` again as well, first. The site stays ready only while both gates say GO.
 
-Done when every item touched by the change carries a fresh mark and the verdict is given again.
+Done when every item touched by the change carries a fresh mark, the verdict is given again, and the user knows what `launch-security-check` last said.
