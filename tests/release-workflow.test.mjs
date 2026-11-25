@@ -56,3 +56,13 @@ test("the workflow names the site's real host, a Worker, not Pages", () => {
 test("a dry run mentions the hook secret only when main would call it", () => {
   assert.match(steps["Dry run"], /if \[ "\$RELEASE" = "true" \]; then[^]*Deploy hook secret set[^]*else/);
 });
+
+test("a release opens its notes with the version's own notes file when there is one", () => {
+  const cutting = Object.values(steps).find((step) => step.includes("gh release create"));
+  assert.match(cutting, /if \[ -f "release-notes\/\$\{TAG\}\.md" \]; then\n\s+notes=\(--notes-file "release-notes\/\$\{TAG\}\.md"\)/);
+  assert.match(cutting, /gh release create "\$TAG"[^\n]*--generate-notes "\$\{notes\[@\]\}"/);
+});
+
+test("a dry run says which notes the release would carry", () => {
+  assert.match(steps["Dry run"], /release-notes\/\$\{TAG\}\.md/);
+});
